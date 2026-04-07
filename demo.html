@@ -1,0 +1,2224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Distributed Systems — Deep Dive</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0d0f14;
+        --bg2: #141720;
+        --bg3: #1c2030;
+        --border: rgba(255, 255, 255, 0.08);
+        --border2: rgba(255, 255, 255, 0.15);
+        --text: #e8eaf0;
+        --muted: #7a7f94;
+        --accent: #5b8dee;
+        --accent2: #3ecf8e;
+        --accent3: #f5a623;
+        --accent4: #e85d75;
+        --accent5: #a78bfa;
+        --mono: "IBM Plex Mono", monospace;
+        --sans: "IBM Plex Sans", sans-serif;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      /* NAV */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(13, 15, 20, 0.95);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--border);
+        padding: 0 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        overflow-x: auto;
+      }
+      .nav-logo {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--accent);
+        padding: 1rem 1.5rem 1rem 0;
+        border-right: 1px solid var(--border);
+        margin-right: 1rem;
+        white-space: nowrap;
+      }
+      .nav-link {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 1rem 0.75rem;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: color 0.2s;
+        border-bottom: 2px solid transparent;
+      }
+      .nav-link:hover,
+      .nav-link.active {
+        color: var(--text);
+        border-bottom-color: var(--accent);
+      }
+
+      /* HERO */
+      .hero {
+        padding: 4rem 2rem 3rem;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .hero-tag {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--accent2);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+      }
+      .hero h1 {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 300;
+        line-height: 1.15;
+        margin-bottom: 1.5rem;
+      }
+      .hero h1 span {
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .hero p {
+        font-size: 16px;
+        color: var(--muted);
+        max-width: 600px;
+        line-height: 1.8;
+      }
+      .topic-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 2rem;
+      }
+      .pill {
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 4px 12px;
+        border: 1px solid var(--border2);
+        border-radius: 20px;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .pill:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* SECTIONS */
+      .section {
+        padding: 3rem 2rem;
+        max-width: 900px;
+        margin: 0 auto;
+        border-top: 1px solid var(--border);
+      }
+      .section-tag {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+      }
+      .section h2 {
+        font-size: 1.8rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+      }
+      .section-sub {
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 2rem;
+      }
+
+      /* CARDS */
+      .card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card p {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .dot-blue {
+        background: var(--accent);
+      }
+      .dot-green {
+        background: var(--accent2);
+      }
+      .dot-amber {
+        background: var(--accent3);
+      }
+      .dot-red {
+        background: var(--accent4);
+      }
+      .dot-purple {
+        background: var(--accent5);
+      }
+
+      /* GRID */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      /* CAP TRIANGLE */
+      .cap-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 2rem 0;
+      }
+      svg.cap-svg {
+        max-width: 500px;
+        width: 100%;
+      }
+
+      /* CODE */
+      code {
+        font-family: var(--mono);
+        font-size: 12px;
+        background: var(--bg3);
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: var(--accent2);
+      }
+      pre {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.25rem;
+        overflow-x: auto;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.6;
+        margin: 1rem 0;
+        color: #c9d1e9;
+      }
+      pre .k {
+        color: var(--accent);
+      }
+      pre .s {
+        color: var(--accent2);
+      }
+      pre .c {
+        color: var(--muted);
+      }
+      pre .n {
+        color: var(--accent3);
+      }
+
+      /* TABLE */
+      .tbl {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin: 1rem 0;
+      }
+      .tbl th {
+        text-align: left;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border2);
+        color: var(--muted);
+        font-weight: 500;
+        font-size: 12px;
+        font-family: var(--mono);
+      }
+      .tbl td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      .tbl tr:last-child td {
+        border-bottom: none;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-family: var(--mono);
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+      .badge-blue {
+        background: rgba(91, 141, 238, 0.15);
+        color: var(--accent);
+      }
+      .badge-green {
+        background: rgba(62, 207, 142, 0.15);
+        color: var(--accent2);
+      }
+      .badge-amber {
+        background: rgba(245, 166, 35, 0.15);
+        color: var(--accent3);
+      }
+      .badge-red {
+        background: rgba(232, 93, 117, 0.15);
+        color: var(--accent4);
+      }
+      .badge-purple {
+        background: rgba(167, 139, 250, 0.15);
+        color: var(--accent5);
+      }
+
+      /* INTERACTIVE CAP */
+      .cap-interactive {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 1.5rem 0;
+      }
+      .cap-btn-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+      }
+      .cap-btn {
+        font-family: var(--mono);
+        font-size: 12px;
+        padding: 6px 16px;
+        border-radius: 6px;
+        border: 1px solid var(--border2);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .cap-btn:hover,
+      .cap-btn.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(91, 141, 238, 0.1);
+      }
+      .cap-result {
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.8;
+        min-height: 80px;
+      }
+      .cap-result .hl {
+        color: var(--accent3);
+        font-weight: 600;
+      }
+
+      /* TIMELINE */
+      .timeline {
+        position: relative;
+        padding-left: 2rem;
+        margin: 1.5rem 0;
+      }
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--border2);
+      }
+      .tl-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+      }
+      .tl-item::before {
+        content: "";
+        position: absolute;
+        left: -2rem;
+        top: 6px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 2px solid var(--bg);
+      }
+      .tl-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .tl-body {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      /* PAXOS STEPPER */
+      .stepper {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        margin: 1.5rem 0;
+      }
+      .stepper-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+      }
+      .stab {
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 10px 16px;
+        cursor: pointer;
+        color: var(--muted);
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+      }
+      .stab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+        background: rgba(91, 141, 238, 0.05);
+      }
+      .step-panel {
+        display: none;
+        padding: 1.5rem;
+      }
+      .step-panel.active {
+        display: block;
+      }
+      .step-actors {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+      .actor {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 12px;
+        font-family: var(--mono);
+      }
+      .actor-name {
+        color: var(--accent5);
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .actor-msg {
+        color: var(--muted);
+      }
+      .step-desc {
+        font-size: 13px;
+        color: var(--text);
+        line-height: 1.8;
+      }
+      .step-insight {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: rgba(91, 141, 238, 0.08);
+        border-left: 3px solid var(--accent);
+        border-radius: 0 6px 6px 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      /* RAFT VIZ */
+      .raft-nodes {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin: 1.5rem 0;
+      }
+      .rnode {
+        width: 100px;
+        padding: 1rem;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        text-align: center;
+        font-size: 12px;
+        font-family: var(--mono);
+        transition: all 0.4s;
+        background: var(--bg2);
+      }
+      .rnode.leader {
+        border-color: var(--accent2);
+        background: rgba(62, 207, 142, 0.08);
+      }
+      .rnode.follower {
+        border-color: var(--border);
+      }
+      .rnode.candidate {
+        border-color: var(--accent3);
+        background: rgba(245, 166, 35, 0.08);
+      }
+      .rnode-role {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .raft-btn {
+        font-family: var(--mono);
+        font-size: 12px;
+        padding: 6px 14px;
+        border: 1px solid var(--border2);
+        border-radius: 6px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        transition: all 0.2s;
+        margin: 4px;
+      }
+      .raft-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .raft-log {
+        background: var(--bg3);
+        border-radius: 8px;
+        padding: 1rem;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 1rem;
+        min-height: 60px;
+        line-height: 1.8;
+      }
+
+      /* CRDT VIZ */
+      .crdt-demo {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1.5rem 0;
+      }
+      .crdt-node {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1rem;
+      }
+      .crdt-node-title {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .crdt-val {
+        font-size: 2rem;
+        font-weight: 300;
+        color: var(--accent2);
+        font-family: var(--mono);
+      }
+      .crdt-ops {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .crdt-merged {
+        background: var(--bg2);
+        border: 1px solid var(--accent2);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        text-align: center;
+      }
+
+      /* CASSANDRA TUNING */
+      .tuning-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 0.75rem 0;
+        flex-wrap: wrap;
+      }
+      .tuning-label {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        width: 60px;
+      }
+      .tuning-bar {
+        flex: 1;
+        height: 8px;
+        background: var(--bg3);
+        border-radius: 4px;
+        min-width: 100px;
+        position: relative;
+        overflow: hidden;
+      }
+      .tuning-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.4s;
+      }
+      .tuning-desc {
+        font-size: 12px;
+        color: var(--muted);
+        min-width: 160px;
+      }
+
+      /* SPANNER */
+      .spanner-timeline {
+        position: relative;
+        margin: 2rem 0;
+      }
+      .st-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .st-label {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        width: 80px;
+        text-align: right;
+      }
+      .st-bar {
+        flex: 1;
+        height: 32px;
+        background: var(--bg3);
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+      }
+      .st-event {
+        position: absolute;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        font-size: 11px;
+        font-family: var(--mono);
+        border-radius: 4px;
+      }
+
+      /* HIGHLIGHT BOX */
+      .highlight {
+        background: var(--bg2);
+        border: 1px solid var(--border2);
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+        margin: 1.5rem 0;
+      }
+      .highlight-title {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--accent3);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .highlight p {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      /* FOOTER */
+      footer {
+        padding: 3rem 2rem;
+        text-align: center;
+        border-top: 1px solid var(--border);
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="nav-logo">dist-sys //</div>
+      <span class="nav-link active" onclick="scrollToSection('cap')"
+        >CAP + PACELC</span
+      >
+      <span class="nav-link" onclick="scrollToSection('linearizability')"
+        >Linearizability</span
+      >
+      <span class="nav-link" onclick="scrollToSection('clocks')"
+        >Clocks + HLC</span
+      >
+      <span class="nav-link" onclick="scrollToSection('crdt')">CRDTs</span>
+      <span class="nav-link" onclick="scrollToSection('consensus')"
+        >Paxos + Raft</span
+      >
+      <span class="nav-link" onclick="scrollToSection('systems')"
+        >Real Systems</span
+      >
+      <span class="nav-link" onclick="scrollToSection('2pc')"
+        >2PC + Failures</span
+      >
+    </nav>
+
+    <div class="hero">
+      <div class="hero-tag">Deep dive — beyond the basics</div>
+      <h1>Distributed Systems<br /><span>Complete Reference</span></h1>
+      <p>
+        Everything beyond the Educative lesson — CAP theorem, PACELC,
+        linearizability, CRDTs, Paxos, Raft, TrueTime, and how real systems like
+        Cassandra, Spanner, DynamoDB, and Kafka apply these concepts.
+      </p>
+      <div class="topic-pills">
+        <span class="pill">CAP theorem</span>
+        <span class="pill">PACELC</span>
+        <span class="pill">Linearizability</span>
+        <span class="pill">Serializability</span>
+        <span class="pill">Vector clocks</span>
+        <span class="pill">Hybrid Logical Clocks</span>
+        <span class="pill">CRDTs</span>
+        <span class="pill">Paxos</span>
+        <span class="pill">Raft</span>
+        <span class="pill">Google Spanner</span>
+        <span class="pill">Cassandra</span>
+        <span class="pill">2PC</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ CAP -->
+    <div class="section" id="cap">
+      <div class="section-tag">01 — Foundation</div>
+      <h2>CAP Theorem + PACELC</h2>
+      <p class="section-sub">
+        The deeper "why" behind every consistency trade-off
+      </p>
+
+      <div class="highlight">
+        <div class="highlight-title">CAP theorem (Brewer, 2000)</div>
+        <p>
+          In the presence of a network
+          <strong style="color: var(--text)">Partition</strong>, a distributed
+          system can guarantee either
+          <strong style="color: var(--text)">Consistency</strong> or
+          <strong style="color: var(--text)">Availability</strong> — but not
+          both simultaneously.
+        </p>
+      </div>
+
+      <div class="cap-interactive">
+        <div class="cap-btn-row">
+          <button class="cap-btn active" onclick="showCap('cp')">
+            CP systems
+          </button>
+          <button class="cap-btn" onclick="showCap('ap')">AP systems</button>
+          <button class="cap-btn" onclick="showCap('ca')">
+            CA (no partition)
+          </button>
+        </div>
+        <svg
+          viewBox="0 0 400 280"
+          width="100%"
+          style="max-width: 400px; display: block; margin: 0 auto 1.5rem"
+        >
+          <defs>
+            <marker
+              id="arr2"
+              viewBox="0 0 10 10"
+              refX="8"
+              refY="5"
+              markerWidth="5"
+              markerHeight="5"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M2 1L8 5L2 9"
+                fill="none"
+                stroke="#7a7f94"
+                stroke-width="1.5"
+              />
+            </marker>
+          </defs>
+          <!-- Triangle -->
+          <polygon
+            id="cap-tri"
+            points="200,30 50,240 350,240"
+            fill="rgba(91,141,238,0.05)"
+            stroke="rgba(91,141,238,0.3)"
+            stroke-width="1"
+          />
+          <!-- Vertices -->
+          <circle
+            cx="200"
+            cy="30"
+            r="28"
+            fill="var(--bg3)"
+            stroke="var(--accent)"
+            stroke-width="1.5"
+            id="cv-c"
+          />
+          <text
+            x="200"
+            y="26"
+            text-anchor="middle"
+            font-family="'IBM Plex Mono'"
+            font-size="11"
+            fill="var(--accent)"
+          >
+            Consistency
+          </text>
+          <text
+            x="200"
+            y="40"
+            text-anchor="middle"
+            font-family="'IBM Plex Mono'"
+            font-size="9"
+            fill="var(--muted)"
+          >
+            C
+          </text>
+          <circle
+            cx="50"
+            cy="240"
+            r="28"
+            fill="var(--bg3)"
+            stroke="var(--accent2)"
+            stroke-width="1.5"
+            id="cv-a"
+          />
+          <text
+            x="50"
+            y="236"
+            text-anchor="middle"
+            font-family="'IBM Plex Mono'"
+            font-size="11"
+            fill="var(--accent2)"
+          >
+            Availability
+          </text>
+          <text
+            x="50"
+            y="250"
+            text-anchor="middle"
+            font-family="'IBM Plex Mono'"
+            font-size="9"
+            fill="var(--muted)"
+          >
+            A
+          </text>
+          <circle
+            cx="350"
+            cy="240"
+            r="28"
+            fill="var(--bg3)"
+            stroke="var(--accent4)"
+            stroke-width="1.5"
+            id="cv-p"
+          />
+          <text
+            x="350"
+            y="236"
+            text-anchor="middle"
+            font-family="'IBM Plex Mono'"
+            font-size="11"
+            fill="var(--accent4)"
+          >
+            Partition
+          </text>
+          <text
+            x="350"
+            y="250"
+            text-anchor="middle"
+            font-family="'IBM Plex Mono'"
+            font-size="9"
+            fill="var(--muted)"
+          >
+            P
+          </text>
+          <!-- Highlight region -->
+          <polygon
+            id="cap-highlight"
+            points="200,30 50,240 125,135"
+            fill="rgba(91,141,238,0.15)"
+            stroke="rgba(91,141,238,0.5)"
+            stroke-width="1.5"
+          />
+          <!-- Labels on edges -->
+          <text
+            x="104"
+            y="140"
+            font-family="'IBM Plex Mono'"
+            font-size="10"
+            fill="var(--muted)"
+          >
+            CP
+          </text>
+          <text
+            x="278"
+            y="140"
+            font-family="'IBM Plex Mono'"
+            font-size="10"
+            fill="var(--muted)"
+          >
+            AP
+          </text>
+          <text
+            x="195"
+            y="258"
+            font-family="'IBM Plex Mono'"
+            font-size="10"
+            fill="var(--muted)"
+          >
+            CA
+          </text>
+        </svg>
+        <div class="cap-result" id="cap-result">
+          <strong style="color: var(--accent)">CP systems</strong> — choose
+          Consistency over Availability during a partition.<br />
+          When nodes can't communicate, the system
+          <span class="hl">refuses to respond</span> rather than return
+          potentially stale data.<br />
+          <strong>Examples:</strong> HBase, Zookeeper, etcd, Redis (in cluster
+          mode), MongoDB (default).<br />
+          <strong>Use when:</strong> correctness is non-negotiable — banking,
+          leader election, configuration.
+        </div>
+      </div>
+
+      <div class="highlight" style="margin-top: 2rem">
+        <div class="highlight-title">
+          PACELC theorem (Abadi, 2012) — the full picture
+        </div>
+        <p>
+          CAP only covers the partition case. PACELC extends it:
+          <strong style="color: var(--text)">If Partition</strong> → choose C or
+          A. <strong style="color: var(--text)">Else</strong> (normal operation)
+          → choose Latency or Consistency. Most real systems trade latency for
+          consistency even without partitions.
+        </p>
+      </div>
+
+      <table class="tbl">
+        <tr>
+          <th>System</th>
+          <th>Partition behaviour</th>
+          <th>Normal behaviour</th>
+          <th>Classification</th>
+        </tr>
+        <tr>
+          <td>DynamoDB</td>
+          <td>Prefers Availability</td>
+          <td>Prefers Latency (async replication)</td>
+          <td><span class="badge badge-amber">PA/EL</span></td>
+        </tr>
+        <tr>
+          <td>Cassandra</td>
+          <td>Prefers Availability</td>
+          <td>Tunable (ONE→ALL)</td>
+          <td><span class="badge badge-amber">PA/EL</span></td>
+        </tr>
+        <tr>
+          <td>Google Spanner</td>
+          <td>Prefers Consistency</td>
+          <td>Prefers Consistency (TrueTime)</td>
+          <td><span class="badge badge-blue">PC/EC</span></td>
+        </tr>
+        <tr>
+          <td>Zookeeper</td>
+          <td>Prefers Consistency</td>
+          <td>Prefers Consistency</td>
+          <td><span class="badge badge-blue">PC/EC</span></td>
+        </tr>
+        <tr>
+          <td>MongoDB</td>
+          <td>Prefers Consistency</td>
+          <td>Prefers Latency</td>
+          <td><span class="badge badge-purple">PC/EL</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ LINEARIZABILITY -->
+    <div class="section" id="linearizability">
+      <div class="section-tag">02 — Consistency Precision</div>
+      <h2>Linearizability vs Serializability</h2>
+      <p class="section-sub">
+        Two terms often confused — they mean very different things
+      </p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span class="dot dot-blue"></span>Linearizability
+          </div>
+          <p>
+            A
+            <strong style="color: var(--text)">single-object</strong> guarantee.
+            Every operation appears to take effect atomically at some point
+            between its invocation and completion. The system behaves as if
+            there's one copy of the data. Also called "atomic consistency" or
+            "strong consistency."
+          </p>
+          <br />
+          <p>
+            <strong style="color: var(--accent)">Key property:</strong>
+            real-time ordering is preserved. If operation A completes before
+            operation B starts, B must see A's result.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span class="dot dot-purple"></span>Serializability
+          </div>
+          <p>
+            A
+            <strong style="color: var(--text)"
+              >multi-object / transaction</strong
+            >
+            guarantee. Concurrent transactions produce a result equivalent to
+            some serial (one-at-a-time) execution. Does NOT require real-time
+            ordering — a "serializable" execution might look like transactions
+            ran in the past.
+          </p>
+          <br />
+          <p>
+            <strong style="color: var(--accent)">Key property:</strong> used in
+            databases (SQL ISOLATION LEVEL SERIALIZABLE). Weaker than
+            linearizability in terms of time.
+          </p>
+        </div>
+      </div>
+
+      <div class="highlight">
+        <div class="highlight-title">
+          Strict Serializability = Linearizability + Serializability
+        </div>
+        <p>
+          The strongest guarantee: transactions appear to execute serially AND
+          in real-time order. Google Spanner provides this. Most systems provide
+          one or the other, not both.
+        </p>
+      </div>
+
+      <div class="card" style="margin-top: 1rem">
+        <div class="card-title">
+          <span class="dot dot-amber"></span>Why the confusion?
+        </div>
+        <p>
+          Both terms use the word "consistency" in conversation. The difference:
+          linearizability is about
+          <strong style="color: var(--text)"
+            >individual reads/writes on one object</strong
+          >. Serializability is about
+          <strong style="color: var(--text)"
+            >transactions across multiple objects</strong
+          >. A bank transfer (debit account A, credit account B) needs
+          serializability. Reading the latest balance needs linearizability.
+        </p>
+      </div>
+
+      <h3 style="margin: 2rem 0 1rem; font-weight: 500; font-size: 1.1rem">
+        Isolation levels (weakest → strongest)
+      </h3>
+      <table class="tbl">
+        <tr>
+          <th>Level</th>
+          <th>Prevents</th>
+          <th>Still allows</th>
+          <th>Real system</th>
+        </tr>
+        <tr>
+          <td><code>READ UNCOMMITTED</code></td>
+          <td>Nothing</td>
+          <td>Dirty reads, phantoms, lost updates</td>
+          <td>Rarely used</td>
+        </tr>
+        <tr>
+          <td><code>READ COMMITTED</code></td>
+          <td>Dirty reads</td>
+          <td>Non-repeatable reads, phantoms</td>
+          <td>PostgreSQL default</td>
+        </tr>
+        <tr>
+          <td><code>REPEATABLE READ</code></td>
+          <td>Dirty + non-repeatable reads</td>
+          <td>Phantom reads</td>
+          <td>MySQL InnoDB default</td>
+        </tr>
+        <tr>
+          <td><code>SNAPSHOT ISOLATION</code></td>
+          <td>Most anomalies</td>
+          <td>Write skew</td>
+          <td>CockroachDB, Spanner</td>
+        </tr>
+        <tr>
+          <td><code>SERIALIZABLE</code></td>
+          <td>All anomalies</td>
+          <td>—</td>
+          <td>PostgreSQL (explicit)</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ CLOCKS -->
+    <div class="section" id="clocks">
+      <div class="section-tag">03 — Time in Distributed Systems</div>
+      <h2>Clocks: Lamport → Vector → HLC</h2>
+      <p class="section-sub">
+        How distributed systems reason about time without a global clock
+      </p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-title">Lamport Clocks (1978)</div>
+          <div class="tl-body">
+            Each process keeps a counter. On send: increment and attach. On
+            receive: take max(local, received) + 1. Gives a partial ordering —
+            if A → B then LC(A) &lt; LC(B). But LC(A) &lt; LC(B) does NOT mean A
+            → B. Can't detect concurrency.
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-title">Vector Clocks (Fidge/Mattern, 1988)</div>
+          <div class="tl-body">
+            Each process keeps a vector of counters (one per process). On send:
+            increment own slot, attach full vector. On receive: element-wise max
+            + increment. Now: A → B iff VC(A) &lt; VC(B) component-wise.
+            Concurrent if neither dominates. Detects concurrency — used in
+            Dynamo, Riak.
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-title">
+            Version Vectors (different from vector clocks!)
+          </div>
+          <div class="tl-body">
+            Similar structure but track <em>data versions</em>, not event
+            causality. Used to detect conflicts in replicated data. DynamoDB
+            uses version vectors internally. The difference: vector clocks
+            timestamp events; version vectors version data objects.
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-title">
+            Hybrid Logical Clocks — HLC (Kulkarni et al., 2014)
+          </div>
+          <div class="tl-body">
+            Combines physical time (wall clock) with logical time. Tracks the
+            maximum observed physical time + a logical counter for
+            same-millisecond events. Gives causality tracking while staying
+            close to real time. Used in
+            <strong style="color: var(--text)">CockroachDB</strong> and
+            <strong style="color: var(--text)">YugabyteDB</strong>.
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-title">TrueTime — Google Spanner (2012)</div>
+          <div class="tl-body">
+            Uses atomic clocks + GPS receivers in every datacenter. Exposes time
+            as an interval [earliest, latest] with bounded uncertainty (~7ms).
+            Spanner commits wait out this uncertainty before returning —
+            guaranteeing that if transaction A commits before B starts,
+            commit_ts(A) &lt; commit_ts(B). Enables globally consistent
+            snapshots.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span class="dot dot-green"></span>HLC — how it works
+        </div>
+        <pre><span class="c">// Each node tracks: (physical_time, logical_counter)</span>
+<span class="c">// abbreviated as (pt, l)</span>
+
+<span class="k">On</span> <span class="s">send</span> message:
+  pt = max(pt, wall_clock_now())
+  l = l + 1
+  attach (pt, l) to message
+
+<span class="k">On</span> <span class="s">receive</span> message with timestamp (msg_pt, msg_l):
+  <span class="k">if</span> msg_pt == pt:
+    l = max(l, msg_l) + 1
+  <span class="k">else if</span> msg_pt > pt:
+    pt = msg_pt
+    l = msg_l + 1
+  <span class="k">else</span>:
+    l = l + 1
+
+<span class="c">// Result: stays within a few ms of wall time,
+// but still captures causality within the same ms</span></pre>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ CRDT -->
+    <div class="section" id="crdt">
+      <div class="section-tag">04 — Conflict-Free Data Structures</div>
+      <h2>CRDTs</h2>
+      <p class="section-sub">
+        Data structures that merge automatically — no coordination needed
+      </p>
+
+      <div class="highlight">
+        <div class="highlight-title">The core idea</div>
+        <p>
+          CRDTs (Conflict-free Replicated Data Types) are data structures
+          designed so that any two replicas can be merged and the result is
+          always the same, regardless of merge order. This makes eventual
+          consistency <em>correct by construction</em> — no conflict resolution
+          logic needed.
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span class="dot dot-blue"></span>State-based CRDTs (CvRDTs)
+          </div>
+          <p>
+            Nodes periodically exchange their full state. Merge function must be
+            commutative, associative, and idempotent. Example: a G-Counter
+            (grow-only counter) where each node tracks its own increment. Merge
+            = element-wise max. Value = sum of all.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span class="dot dot-green"></span>Operation-based CRDTs (CmRDTs)
+          </div>
+          <p>
+            Nodes broadcast operations (not full state). Operations must be
+            commutative. Smaller messages — just send "increment" instead of
+            full state. Requires reliable delivery (no lost ops). Example:
+            collaborative text editors.
+          </p>
+        </div>
+      </div>
+
+      <h3 style="margin: 1.5rem 0 1rem; font-weight: 500; font-size: 1rem">
+        Interactive G-Counter demo
+      </h3>
+      <div class="crdt-demo">
+        <div class="crdt-node">
+          <div class="crdt-node-title">Node A — [clicks add here]</div>
+          <div class="crdt-val" id="ca-val">0</div>
+          <div class="crdt-ops" id="ca-ops">Vector: [0, 0]</div>
+          <button
+            class="raft-btn"
+            style="margin-top: 8px"
+            onclick="crdtIncrement('A')"
+          >
+            + Increment A
+          </button>
+        </div>
+        <div class="crdt-node">
+          <div class="crdt-node-title">Node B — [clicks add here]</div>
+          <div class="crdt-val" id="cb-val">0</div>
+          <div class="crdt-ops" id="cb-ops">Vector: [0, 0]</div>
+          <button
+            class="raft-btn"
+            style="margin-top: 8px"
+            onclick="crdtIncrement('B')"
+          >
+            + Increment B
+          </button>
+        </div>
+      </div>
+      <div class="crdt-merged">
+        <div
+          style="
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 6px;
+          "
+        >
+          Merged value (element-wise max, then sum)
+        </div>
+        <div class="crdt-val" id="cm-val" style="font-size: 2.5rem">0</div>
+        <button class="raft-btn" style="margin-top: 8px" onclick="crdtMerge()">
+          Sync / Merge
+        </button>
+        <button class="raft-btn" style="margin-top: 8px" onclick="crdtReset()">
+          Reset
+        </button>
+      </div>
+
+      <h3 style="margin: 2rem 0 1rem; font-weight: 500; font-size: 1rem">
+        Common CRDT types
+      </h3>
+      <table class="tbl">
+        <tr>
+          <th>Type</th>
+          <th>Operations</th>
+          <th>Merge rule</th>
+          <th>Used in</th>
+        </tr>
+        <tr>
+          <td>G-Counter</td>
+          <td>increment</td>
+          <td>element-wise max, sum</td>
+          <td>View counters, likes</td>
+        </tr>
+        <tr>
+          <td>PN-Counter</td>
+          <td>increment, decrement</td>
+          <td>two G-Counters (P - N)</td>
+          <td>Inventory, balance</td>
+        </tr>
+        <tr>
+          <td>G-Set</td>
+          <td>add</td>
+          <td>set union</td>
+          <td>Tags, membership</td>
+        </tr>
+        <tr>
+          <td>2P-Set</td>
+          <td>add, remove</td>
+          <td>union of adds ∪ removes</td>
+          <td>Shopping cart (limited)</td>
+        </tr>
+        <tr>
+          <td>OR-Set</td>
+          <td>add, remove (any order)</td>
+          <td>unique tags per add</td>
+          <td>Riak, collaborative lists</td>
+        </tr>
+        <tr>
+          <td>LWW-Register</td>
+          <td>write with timestamp</td>
+          <td>last-write-wins</td>
+          <td>Profile fields</td>
+        </tr>
+        <tr>
+          <td>RGA / LSEQ</td>
+          <td>insert, delete at position</td>
+          <td>unique position IDs</td>
+          <td>Google Docs, Figma</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ CONSENSUS -->
+    <div class="section" id="consensus">
+      <div class="section-tag">05 — Consensus Algorithms</div>
+      <h2>Paxos + Raft</h2>
+      <p class="section-sub">
+        How distributed nodes agree on a single value despite failures
+      </p>
+
+      <div class="highlight">
+        <div class="highlight-title">The consensus problem</div>
+        <p>
+          Given N nodes, some of which may crash or be unreachable, reach
+          agreement on a single value such that: (1) only proposed values are
+          chosen, (2) only one value is chosen, (3) a node only learns a chosen
+          value. FLP impossibility theorem: no deterministic algorithm can
+          guarantee consensus in an asynchronous system with even one crash
+          failure. Paxos and Raft work around this with timeouts and
+          probabilistic guarantees.
+        </p>
+      </div>
+
+      <h3 style="margin: 1.5rem 0 1rem; font-weight: 500; font-size: 1rem">
+        Paxos — phase by phase
+      </h3>
+      <div class="stepper">
+        <div class="stepper-tabs">
+          <span class="stab active" onclick="showStep('p1')"
+            >Phase 1a: Prepare</span
+          >
+          <span class="stab" onclick="showStep('p1b')">Phase 1b: Promise</span>
+          <span class="stab" onclick="showStep('p2')">Phase 2a: Accept</span>
+          <span class="stab" onclick="showStep('p2b')">Phase 2b: Accepted</span>
+          <span class="stab" onclick="showStep('learn')">Learn</span>
+        </div>
+        <div class="step-panel active" id="sp-p1">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Proposer</div>
+              <div class="actor-msg">sends Prepare(n) to all Acceptors</div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">n</div>
+              <div class="actor-msg">
+                proposal number (must be unique, higher than any seen)
+              </div>
+            </div>
+          </div>
+          <div class="step-desc">
+            The proposer picks a proposal number <code>n</code> higher than any
+            it has used before, and broadcasts <code>Prepare(n)</code> to a
+            majority of acceptors. It is asking: "Will you promise not to accept
+            any proposal numbered less than n?"
+          </div>
+          <div class="step-insight">
+            The proposal number is like a ballot number in an election. Higher =
+            more recent. The proposer doesn't send a value yet — just asks for a
+            promise.
+          </div>
+        </div>
+        <div class="step-panel" id="sp-p1b">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Acceptor</div>
+              <div class="actor-msg">replies Promise(n, v_prev)</div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">v_prev</div>
+              <div class="actor-msg">
+                highest-numbered accepted value so far (if any)
+              </div>
+            </div>
+          </div>
+          <div class="step-desc">
+            If <code>n</code> is the highest proposal number the acceptor has
+            seen, it replies with a <code>Promise</code> — it will ignore any
+            future proposals with number &lt; n. It also includes the value it
+            last accepted (if any), so the proposer can maintain safety.
+          </div>
+          <div class="step-insight">
+            If any acceptor returns a previously accepted value, the proposer
+            MUST use that value — not its own. This is how Paxos ensures
+            consistency across failed rounds.
+          </div>
+        </div>
+        <div class="step-panel" id="sp-p2">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Proposer</div>
+              <div class="actor-msg">sends Accept(n, v) to majority</div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">v</div>
+              <div class="actor-msg">its value OR highest v_prev received</div>
+            </div>
+          </div>
+          <div class="step-desc">
+            Once the proposer receives promises from a majority, it sends
+            <code>Accept(n, v)</code>. The value <code>v</code> is either the
+            proposer's own value (if no acceptor returned a prior value), or the
+            highest-numbered previously accepted value from the promises.
+          </div>
+          <div class="step-insight">
+            Majority quorums are the key. Any two majorities overlap by at least
+            one node — so any two rounds of Paxos share at least one acceptor,
+            preventing contradictory decisions.
+          </div>
+        </div>
+        <div class="step-panel" id="sp-p2b">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Acceptor</div>
+              <div class="actor-msg">accepts if n >= promised_n</div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">Notification</div>
+              <div class="actor-msg">sends Accepted(n, v) to Learners</div>
+            </div>
+          </div>
+          <div class="step-desc">
+            Each acceptor that receives <code>Accept(n, v)</code> accepts it if
+            <code>n</code> is still the highest proposal number it has promised.
+            It then notifies all Learners of the accepted value.
+          </div>
+          <div class="step-insight">
+            An acceptor can receive multiple Accept messages from competing
+            proposers. It only accepts the one with the highest proposal number
+            — this is the "last writer wins" of Paxos.
+          </div>
+        </div>
+        <div class="step-panel" id="sp-learn">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Learner</div>
+              <div class="actor-msg">waits for Accepted from majority</div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">Consensus</div>
+              <div class="actor-msg">value is chosen when majority accepts</div>
+            </div>
+          </div>
+          <div class="step-desc">
+            A value is "chosen" when a majority of acceptors have accepted the
+            same <code>(n, v)</code>. Learners (which may overlap with
+            proposers/acceptors) can now act on this value. Multi-Paxos extends
+            this to a log of values by electing a stable leader to skip Phase 1
+            for subsequent entries.
+          </div>
+          <div class="step-insight">
+            Paxos is notoriously hard to implement correctly. Raft was designed
+            specifically to be easier to understand — same guarantees, more
+            prescriptive structure.
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin: 2rem 0 1rem; font-weight: 500; font-size: 1rem">
+        Raft — leader election simulator
+      </h3>
+      <div
+        style="
+          background: var(--bg2);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 1.5rem;
+        "
+      >
+        <div class="raft-nodes" id="raft-nodes">
+          <div class="rnode leader" id="rn0">
+            <div style="color: var(--accent2); font-weight: 600">Node 1</div>
+            <div class="rnode-role">Leader</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 4px">
+              term: 1
+            </div>
+          </div>
+          <div class="rnode follower" id="rn1">
+            <div>Node 2</div>
+            <div class="rnode-role" style="color: var(--muted)">Follower</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 4px">
+              term: 1
+            </div>
+          </div>
+          <div class="rnode follower" id="rn2">
+            <div>Node 3</div>
+            <div class="rnode-role" style="color: var(--muted)">Follower</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 4px">
+              term: 1
+            </div>
+          </div>
+          <div class="rnode follower" id="rn3">
+            <div>Node 4</div>
+            <div class="rnode-role" style="color: var(--muted)">Follower</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 4px">
+              term: 1
+            </div>
+          </div>
+          <div class="rnode follower" id="rn4">
+            <div>Node 5</div>
+            <div class="rnode-role" style="color: var(--muted)">Follower</div>
+            <div style="font-size: 10px; color: var(--muted); margin-top: 4px">
+              term: 1
+            </div>
+          </div>
+        </div>
+        <div style="text-align: center; margin-bottom: 1rem">
+          <button class="raft-btn" onclick="raftKillLeader()">
+            Kill leader
+          </button>
+          <button class="raft-btn" onclick="raftElect()">
+            Trigger election
+          </button>
+          <button class="raft-btn" onclick="raftReset()">Reset</button>
+        </div>
+        <div class="raft-log" id="raft-log">
+          Ready. Click "Kill leader" to simulate a leader failure and watch
+          election.
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 1.5rem">
+        <div class="card">
+          <div class="card-title">
+            <span class="dot dot-blue"></span>Paxos vs Raft
+          </div>
+          <p>
+            <strong style="color: var(--text)">Paxos:</strong> theoretical
+            foundation. Flexible but underspecified — each implementation makes
+            different choices. Used in Chubby (Google), Zookeeper (ZAB variant).
+          </p>
+          <br />
+          <p>
+            <strong style="color: var(--text)">Raft:</strong> designed for
+            understandability. Prescribes leader election, log replication, and
+            safety rules explicitly. Used in etcd, CockroachDB, TiKV, Consul.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span class="dot dot-amber"></span>Raft key properties
+          </div>
+          <p>
+            One leader at a time (per term). Leader replicates log entries to
+            followers. Entry committed when majority acknowledges. Leader
+            election via randomized timeouts — reduces split votes. Safety: a
+            node only votes for a candidate whose log is at least as up-to-date
+            as its own.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ REAL SYSTEMS -->
+    <div class="section" id="systems">
+      <div class="section-tag">06 — Real Systems</div>
+      <h2>How Real Systems Apply These Concepts</h2>
+      <p class="section-sub">Cassandra, Spanner, DynamoDB, MongoDB, Kafka</p>
+
+      <h3 style="margin: 0 0 1rem; font-weight: 500; font-size: 1rem">
+        Cassandra — tunable consistency
+      </h3>
+      <div class="card">
+        <p style="margin-bottom: 1rem">
+          Cassandra lets you choose consistency level <em>per query</em>. The
+          magic number: <code>R + W > N</code> guarantees strong consistency
+          (where R = read replicas, W = write replicas, N = total replicas).
+        </p>
+        <div id="cassandra-demo">
+          <div
+            style="
+              display: flex;
+              gap: 1rem;
+              flex-wrap: wrap;
+              margin-bottom: 1.5rem;
+              align-items: center;
+            "
+          >
+            <div>
+              <div
+                style="
+                  font-size: 11px;
+                  color: var(--muted);
+                  font-family: var(--mono);
+                  margin-bottom: 4px;
+                "
+              >
+                N (replicas)
+              </div>
+              <input
+                type="range"
+                min="3"
+                max="7"
+                value="3"
+                step="2"
+                id="cn"
+                oninput="updateCassandra()"
+                style="width: 120px"
+              />
+              <span
+                id="cn-val"
+                style="
+                  font-family: var(--mono);
+                  font-size: 12px;
+                  color: var(--accent);
+                  margin-left: 8px;
+                "
+                >3</span
+              >
+            </div>
+            <div>
+              <div
+                style="
+                  font-size: 11px;
+                  color: var(--muted);
+                  font-family: var(--mono);
+                  margin-bottom: 4px;
+                "
+              >
+                Write (W)
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="7"
+                value="2"
+                id="cw"
+                oninput="updateCassandra()"
+                style="width: 120px"
+              />
+              <span
+                id="cw-val"
+                style="
+                  font-family: var(--mono);
+                  font-size: 12px;
+                  color: var(--accent2);
+                  margin-left: 8px;
+                "
+                >2</span
+              >
+            </div>
+            <div>
+              <div
+                style="
+                  font-size: 11px;
+                  color: var(--muted);
+                  font-family: var(--mono);
+                  margin-bottom: 4px;
+                "
+              >
+                Read (R)
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="7"
+                value="2"
+                id="cr"
+                oninput="updateCassandra()"
+                style="width: 120px"
+              />
+              <span
+                id="cr-val"
+                style="
+                  font-family: var(--mono);
+                  font-size: 12px;
+                  color: var(--accent4);
+                  margin-left: 8px;
+                "
+                >2</span
+              >
+            </div>
+          </div>
+          <div
+            id="cass-result"
+            style="
+              font-size: 13px;
+              padding: 1rem;
+              background: var(--bg3);
+              border-radius: 8px;
+              font-family: var(--mono);
+              line-height: 1.8;
+            "
+          ></div>
+        </div>
+      </div>
+
+      <h3 style="margin: 2rem 0 1rem; font-weight: 500; font-size: 1rem">
+        Google Spanner — TrueTime explained
+      </h3>
+      <div class="card">
+        <p style="margin-bottom: 1rem">
+          Spanner uses atomic clocks + GPS to bound clock uncertainty to ~7ms.
+          Every transaction must wait out this uncertainty before committing —
+          this pause is the price of global consistency.
+        </p>
+        <div
+          style="
+            background: var(--bg3);
+            border-radius: 8px;
+            padding: 1.25rem;
+            font-size: 13px;
+            line-height: 1.8;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 1rem;
+              margin-bottom: 0.75rem;
+              flex-wrap: wrap;
+            "
+          >
+            <span
+              style="
+                font-family: var(--mono);
+                font-size: 11px;
+                color: var(--muted);
+                width: 100px;
+              "
+              >TrueTime.now()</span
+            >
+            <span style="font-family: var(--mono); color: var(--accent)"
+              >→ returns interval [T_earliest, T_latest]</span
+            >
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 1rem;
+              margin-bottom: 0.75rem;
+              flex-wrap: wrap;
+            "
+          >
+            <span
+              style="
+                font-family: var(--mono);
+                font-size: 11px;
+                color: var(--muted);
+                width: 100px;
+              "
+              >On commit</span
+            >
+            <span style="font-family: var(--mono); color: var(--accent2)"
+              >→ wait until T_latest passes (commit_wait)</span
+            >
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 1rem;
+              flex-wrap: wrap;
+            "
+          >
+            <span
+              style="
+                font-family: var(--mono);
+                font-size: 11px;
+                color: var(--muted);
+                width: 100px;
+              "
+              >Guarantee</span
+            >
+            <span style="font-family: var(--mono); color: var(--accent3)"
+              >→ if Txn A commits before Txn B starts: ts(A) &lt; ts(B)</span
+            >
+          </div>
+        </div>
+        <div style="margin-top: 1rem; font-size: 12px; color: var(--muted)">
+          This is the only production system providing
+          <strong style="color: var(--text)">external consistency</strong>
+          (linearizability + serializability) at global scale. Other systems
+          either relax consistency or require explicit coordination per
+          transaction.
+        </div>
+      </div>
+
+      <h3 style="margin: 2rem 0 1rem; font-weight: 500; font-size: 1rem">
+        MongoDB — evolution of consistency
+      </h3>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-title">Before v3.6 — eventual consistency only</div>
+          <div class="tl-body">
+            Reads from secondaries could return stale data. No causal guarantees
+            across sessions. Primary failure could lose acknowledged writes.
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-title">v3.6 — causal consistency sessions</div>
+          <div class="tl-body">
+            Client sessions can opt into causal consistency. Uses cluster time
+            (a hybrid logical clock) to ensure reads always see the writes from
+            the same session in order.
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-title">v4.0+ — multi-document transactions</div>
+          <div class="tl-body">
+            Added ACID transactions across multiple documents and collections.
+            Uses snapshot isolation. Combined with causal sessions gives
+            near-serializable guarantees within a replica set.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ 2PC -->
+    <div class="section" id="2pc">
+      <div class="section-tag">07 — Distributed Transactions</div>
+      <h2>Two-Phase Commit (2PC) + Failure Modes</h2>
+      <p class="section-sub">
+        How distributed transactions work — and why they're fragile
+      </p>
+
+      <div class="stepper">
+        <div class="stepper-tabs">
+          <span class="stab active" onclick="showStep2('2p1')"
+            >Phase 1: Prepare</span
+          >
+          <span class="stab" onclick="showStep2('2p2')">Phase 2: Commit</span>
+          <span class="stab" onclick="showStep2('2pf')"
+            >Failure: coordinator crash</span
+          >
+          <span class="stab" onclick="showStep2('2pp')"
+            >Failure: participant crash</span
+          >
+          <span class="stab" onclick="showStep2('3pc')">3PC — the fix</span>
+        </div>
+        <div class="step-panel active" id="sp-2p1">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Coordinator</div>
+              <div class="actor-msg">sends PREPARE to all participants</div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">Participants</div>
+              <div class="actor-msg">
+                lock resources, reply VOTE-YES or VOTE-NO
+              </div>
+            </div>
+          </div>
+          <div class="step-desc">
+            The coordinator sends a PREPARE message to all participants. Each
+            participant checks if it can commit (sufficient resources, no
+            conflicts), locks the relevant rows/records, writes to a redo log,
+            and replies VOTE-YES or VOTE-NO.
+          </div>
+          <div class="step-insight">
+            Once a participant votes YES, it's locked in — it cannot
+            unilaterally abort anymore. This is the "point of no return" for
+            that participant.
+          </div>
+        </div>
+        <div class="step-panel" id="sp-2p2">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Coordinator</div>
+              <div class="actor-msg">
+                if all YES → COMMIT. If any NO → ABORT
+              </div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">Participants</div>
+              <div class="actor-msg">
+                apply or roll back, release locks, send ACK
+              </div>
+            </div>
+          </div>
+          <div class="step-desc">
+            If all participants voted YES, the coordinator sends COMMIT to all.
+            Each participant applies the transaction, releases locks, and
+            acknowledges. If any voted NO, the coordinator sends ABORT — all
+            participants roll back.
+          </div>
+          <div class="step-insight">
+            The coordinator must durably log its decision before sending — if it
+            crashes after deciding but before all participants hear it, the
+            recovery process must re-send the decision.
+          </div>
+        </div>
+        <div class="step-panel" id="sp-2pf">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Coordinator crashes</div>
+              <div class="actor-msg">
+                after receiving all votes but before sending decision
+              </div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">Participants</div>
+              <div class="actor-msg">blocked — can't commit OR abort</div>
+            </div>
+          </div>
+          <div class="step-desc">
+            <strong style="color: var(--accent4)">The blocking problem:</strong>
+            participants who voted YES are stuck. They've locked resources and
+            can't proceed without the coordinator's decision. They can't abort
+            (coordinator might have decided COMMIT) and can't commit
+            (coordinator might have decided ABORT). They must wait for the
+            coordinator to recover.
+          </div>
+          <div class="step-insight">
+            This is 2PC's fatal flaw. It is a blocking protocol — a coordinator
+            crash can hold locks indefinitely. In practice, timeouts +
+            coordinator recovery logs mitigate but don't eliminate this.
+          </div>
+        </div>
+        <div class="step-panel" id="sp-2pp">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Participant crashes</div>
+              <div class="actor-msg">
+                after voting YES, before receiving decision
+              </div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">Recovery</div>
+              <div class="actor-msg">
+                check redo log — if prepared, ask coordinator for decision
+              </div>
+            </div>
+          </div>
+          <div class="step-desc">
+            When a participant recovers, it checks its redo log. If it finds a
+            PREPARE record, it asks the coordinator for the decision and applies
+            it. If it finds a COMMIT record, it commits. If it finds nothing
+            (crashed before voting), it can safely abort.
+          </div>
+          <div class="step-insight">
+            The redo log is essential. Without durable logging, recovery is
+            impossible. This is why 2PC requires both coordinator and
+            participant to write to durable storage before any network message.
+          </div>
+        </div>
+        <div class="step-panel" id="sp-3pc">
+          <div class="step-actors">
+            <div class="actor">
+              <div class="actor-name">Phase 1</div>
+              <div class="actor-msg">PREPARE (same as 2PC)</div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">Phase 2</div>
+              <div class="actor-msg">PRE-COMMIT (new!)</div>
+            </div>
+            <div class="actor">
+              <div class="actor-name">Phase 3</div>
+              <div class="actor-msg">COMMIT</div>
+            </div>
+          </div>
+          <div class="step-desc">
+            Three-Phase Commit adds a PRE-COMMIT phase. After all YES votes, the
+            coordinator sends PRE-COMMIT before the actual COMMIT. If
+            participants see PRE-COMMIT, they know a COMMIT is coming — they can
+            safely commit even if the coordinator crashes, making 3PC
+            non-blocking in most failure scenarios.
+          </div>
+          <div class="step-insight">
+            3PC works under crash failures but NOT under network partitions — a
+            partitioned participant that received PRE-COMMIT and one that didn't
+            can make conflicting decisions. In practice, 2PC + recovery is more
+            commonly used than 3PC.
+          </div>
+        </div>
+      </div>
+
+      <div class="highlight" style="margin-top: 1.5rem">
+        <div class="highlight-title">Modern alternatives to 2PC</div>
+        <p>
+          <strong style="color: var(--text)">Saga pattern:</strong> break a
+          distributed transaction into a sequence of local transactions, each
+          with a compensating action for rollback. No global locks — eventual
+          consistency with explicit rollback logic. Used in microservices.<br /><br />
+          <strong style="color: var(--text)">Percolator (Google):</strong>
+          optimistic concurrency with timestamps. Read a snapshot, detect
+          conflicts at commit time. Used in TiKV / TiDB.<br /><br />
+          <strong style="color: var(--text)">Calvin:</strong> pre-order
+          transactions before executing — avoids distributed locking entirely by
+          making sequencing the only coordination step.
+        </p>
+      </div>
+    </div>
+
+    <footer>
+      distributed-systems-deep-dive &nbsp;·&nbsp; covers CAP, PACELC,
+      linearizability, CRDTs, Paxos, Raft, TrueTime, 2PC &nbsp;·&nbsp; built
+      with Claude
+    </footer>
+
+    <script>
+      // NAV scroll
+      function scrollToSection(id) {
+        document.getElementById(id).scrollIntoView({ behavior: "smooth" });
+        document
+          .querySelectorAll(".nav-link")
+          .forEach((l) => l.classList.remove("active"));
+      }
+
+      // CAP interactive
+      const capData = {
+        cp: {
+          highlight: "200,30 50,240 125,135",
+          result: `<strong style="color:var(--accent)">CP systems</strong> — choose Consistency over Availability during a partition.<br/>When nodes can't communicate, the system <span class="hl">refuses to respond</span> rather than return potentially stale data.<br/><strong>Examples:</strong> HBase, Zookeeper, etcd, Redis (cluster mode), MongoDB.<br/><strong>Use when:</strong> correctness is non-negotiable — banking, leader election, config management.`,
+        },
+        ap: {
+          highlight: "200,30 350,240 275,135",
+          result: `<strong style="color:var(--accent2)">AP systems</strong> — choose Availability over Consistency during a partition.<br/>Every node continues responding, but different nodes may return <span class="hl">different (stale) values</span>.<br/><strong>Examples:</strong> Cassandra, DynamoDB (default), Riak, CouchDB.<br/><strong>Use when:</strong> uptime is critical and stale reads are acceptable — social media, DNS, shopping carts.`,
+        },
+        ca: {
+          highlight: "50,240 350,240 200,240",
+          result: `<strong style="color:var(--accent3)">CA systems</strong> — Consistent AND Available, but <span class="hl">no partition tolerance</span>.<br/>This only works on a single node or a perfectly reliable network. In practice, network partitions always happen — so pure CA distributed systems don't exist.<br/><strong>Examples:</strong> Single-node PostgreSQL, single-node MySQL (not distributed).<br/><strong>Note:</strong> Brewer clarified that "CA" in distributed systems is essentially theoretical.`,
+        },
+      };
+      function showCap(type) {
+        document
+          .querySelectorAll(".cap-btn")
+          .forEach((b) => b.classList.remove("active"));
+        event.target.classList.add("active");
+        document
+          .getElementById("cap-highlight")
+          .setAttribute("points", capData[type].highlight);
+        document.getElementById("cap-result").innerHTML = capData[type].result;
+      }
+
+      // Paxos stepper
+      function showStep(id) {
+        document
+          .querySelectorAll("#consensus .stab")
+          .forEach((t) => t.classList.remove("active"));
+        document
+          .querySelectorAll("#consensus .step-panel")
+          .forEach((p) => p.classList.remove("active"));
+        event.target.classList.add("active");
+        document.getElementById("sp-" + id).classList.add("active");
+      }
+
+      // 2PC stepper
+      function showStep2(id) {
+        document.querySelectorAll("#twopc .stab, #sp-2p1").forEach(() => {});
+        const tabs = event.target.closest(".stepper").querySelectorAll(".stab");
+        const panels = event.target
+          .closest(".stepper")
+          .querySelectorAll(".step-panel");
+        tabs.forEach((t) => t.classList.remove("active"));
+        panels.forEach((p) => p.classList.remove("active"));
+        event.target.classList.add("active");
+        document.getElementById("sp-" + id).classList.add("active");
+      }
+
+      // CRDT
+      let ca = [0, 0],
+        cb = [0, 0],
+        merged = [0, 0];
+      function crdtIncrement(node) {
+        if (node === "A") {
+          ca[0]++;
+        } else {
+          cb[1]++;
+        }
+        document.getElementById("ca-val").textContent = ca[0];
+        document.getElementById("cb-val").textContent = cb[1];
+        document.getElementById("ca-ops").textContent =
+          "Vector: [" + ca[0] + ", " + ca[1] + "]";
+        document.getElementById("cb-ops").textContent =
+          "Vector: [" + cb[0] + ", " + cb[1] + "]";
+      }
+      function crdtMerge() {
+        merged = [Math.max(ca[0], cb[0]), Math.max(ca[1], cb[1])];
+        ca = [...merged];
+        cb = [...merged];
+        document.getElementById("ca-val").textContent = ca[0];
+        document.getElementById("cb-val").textContent = cb[1];
+        document.getElementById("ca-ops").textContent =
+          "Vector: [" + ca[0] + ", " + ca[1] + "] (synced)";
+        document.getElementById("cb-ops").textContent =
+          "Vector: [" + cb[0] + ", " + cb[1] + "] (synced)";
+        document.getElementById("cm-val").textContent = merged[0] + merged[1];
+      }
+      function crdtReset() {
+        ca = [0, 0];
+        cb = [0, 0];
+        merged = [0, 0];
+        document.getElementById("ca-val").textContent = 0;
+        document.getElementById("cb-val").textContent = 0;
+        document.getElementById("cm-val").textContent = 0;
+        document.getElementById("ca-ops").textContent = "Vector: [0, 0]";
+        document.getElementById("cb-ops").textContent = "Vector: [0, 0]";
+      }
+
+      // Cassandra tuning
+      function updateCassandra() {
+        const n = +document.getElementById("cn").value;
+        const w = +document.getElementById("cw").value;
+        const r = +document.getElementById("cr").value;
+        document.getElementById("cn-val").textContent = n;
+        document.getElementById("cw-val").textContent = w;
+        document.getElementById("cr-val").textContent = r;
+        const strong = r + w > n;
+        const wName =
+          w === 1
+            ? "ONE"
+            : w === n
+              ? "ALL"
+              : w === Math.ceil(n / 2) + 1
+                ? "QUORUM"
+                : "CUSTOM(" + w + ")";
+        const rName =
+          r === 1
+            ? "ONE"
+            : r === n
+              ? "ALL"
+              : r === Math.ceil(n / 2) + 1
+                ? "QUORUM"
+                : "CUSTOM(" + r + ")";
+        document.getElementById("cass-result").innerHTML =
+          `<span style="color:var(--accent2)">N=${n}</span> replicas &nbsp; <span style="color:var(--accent2)">W=${w}</span> (${wName}) &nbsp; <span style="color:var(--accent4)">R=${r}</span> (${rName})\n` +
+          `R + W = ${r + w} ${strong ? ">" : "≤"} N (${n})\n\n` +
+          (strong
+            ? `<span style="color:var(--accent2)">✓ Strong consistency guaranteed</span> — read quorum and write quorum overlap, so you always read your own writes.\n  Cost: higher latency, lower availability.`
+            : `<span style="color:var(--accent3)">~ Eventual consistency only</span> — read and write quorums don't overlap.\n  A reader may not see the latest write.\n  Benefit: lower latency, higher availability.`);
+      }
+      updateCassandra();
+
+      // Raft
+      let raftState = { leader: 0, term: 1, killed: false };
+      function raftLog(msg) {
+        const el = document.getElementById("raft-log");
+        el.textContent += "\n" + msg;
+        el.scrollTop = el.scrollHeight;
+      }
+      function raftUpdateNodes() {
+        for (let i = 0; i < 5; i++) {
+          const n = document.getElementById("rn" + i);
+          if (i === raftState.leader && !raftState.killed) {
+            n.className = "rnode leader";
+            n.innerHTML = `<div style="color:var(--accent2);font-weight:600">Node ${i + 1}</div><div class="rnode-role">Leader</div><div style="font-size:10px;color:var(--muted);margin-top:4px">term: ${raftState.term}</div>`;
+          } else {
+            n.className = "rnode follower";
+            n.innerHTML = `<div>Node ${i + 1}</div><div class="rnode-role" style="color:var(--muted)">${raftState.killed && i === raftState.leader ? "Dead" : "Follower"}</div><div style="font-size:10px;color:var(--muted);margin-top:4px">term: ${raftState.term}</div>`;
+          }
+        }
+      }
+      function raftKillLeader() {
+        raftState.killed = true;
+        const el = document.getElementById("rn" + raftState.leader);
+        el.className = "rnode";
+        el.innerHTML = `<div style="color:var(--accent4)">Node ${raftState.leader + 1}</div><div class="rnode-role" style="color:var(--accent4)">Dead</div><div style="font-size:10px;color:var(--muted);margin-top:4px">term: ${raftState.term}</div>`;
+        raftLog(
+          `[!] Node ${raftState.leader + 1} (leader) crashed. Followers detect heartbeat timeout...`,
+        );
+      }
+      function raftElect() {
+        if (!raftState.killed) {
+          raftLog("[~] No failure. Kill the leader first.");
+          return;
+        }
+        raftState.term++;
+        const candidates = [];
+        for (let i = 0; i < 5; i++)
+          if (i !== raftState.leader) candidates.push(i);
+        const candidate =
+          candidates[Math.floor(Math.random() * candidates.length)];
+        raftLog(
+          `[→] Node ${candidate + 1} election timeout fires first. Starts election for term ${raftState.term}.`,
+        );
+        raftLog(
+          `[→] Node ${candidate + 1} requests votes from remaining nodes...`,
+        );
+        setTimeout(() => {
+          const newLeader = candidate;
+          raftState.leader = newLeader;
+          raftState.killed = false;
+          raftUpdateNodes();
+          raftLog(
+            `[✓] Node ${newLeader + 1} wins majority vote. Elected leader for term ${raftState.term}.`,
+          );
+          raftLog(
+            `[✓] New leader begins sending heartbeats. System operational.`,
+          );
+        }, 800);
+      }
+      function raftReset() {
+        raftState = { leader: 0, term: 1, killed: false };
+        raftUpdateNodes();
+        document.getElementById("raft-log").textContent =
+          'Ready. Click "Kill leader" to simulate a leader failure and watch election.';
+      }
+    </script>
+  </body>
+</html>
