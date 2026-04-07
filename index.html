@@ -674,23 +674,25 @@
   <body>
     <nav>
       <div class="nav-logo">dist-sys //</div>
-      <span class="nav-link active" onclick="scrollToSection('cap')"
+      <span class="nav-link active" onclick="scrollToSection(event, 'cap')"
         >CAP + PACELC</span
       >
-      <span class="nav-link" onclick="scrollToSection('linearizability')"
+      <span class="nav-link" onclick="scrollToSection(event, 'linearizability')"
         >Linearizability</span
       >
-      <span class="nav-link" onclick="scrollToSection('clocks')"
+      <span class="nav-link" onclick="scrollToSection(event, 'clocks')"
         >Clocks + HLC</span
       >
-      <span class="nav-link" onclick="scrollToSection('crdt')">CRDTs</span>
-      <span class="nav-link" onclick="scrollToSection('consensus')"
+      <span class="nav-link" onclick="scrollToSection(event, 'crdt')"
+        >CRDTs</span
+      >
+      <span class="nav-link" onclick="scrollToSection(event, 'consensus')"
         >Paxos + Raft</span
       >
-      <span class="nav-link" onclick="scrollToSection('systems')"
+      <span class="nav-link" onclick="scrollToSection(event, 'systems')"
         >Real Systems</span
       >
-      <span class="nav-link" onclick="scrollToSection('2pc')"
+      <span class="nav-link" onclick="scrollToSection(event, '2pc')"
         >2PC + Failures</span
       >
     </nav>
@@ -741,11 +743,13 @@
 
       <div class="cap-interactive">
         <div class="cap-btn-row">
-          <button class="cap-btn active" onclick="showCap('cp')">
+          <button class="cap-btn active" onclick="showCap(event, 'cp')">
             CP systems
           </button>
-          <button class="cap-btn" onclick="showCap('ap')">AP systems</button>
-          <button class="cap-btn" onclick="showCap('ca')">
+          <button class="cap-btn" onclick="showCap(event, 'ap')">
+            AP systems
+          </button>
+          <button class="cap-btn" onclick="showCap(event, 'ca')">
             CA (no partition)
           </button>
         </div>
@@ -1358,13 +1362,19 @@
       </h3>
       <div class="stepper">
         <div class="stepper-tabs">
-          <span class="stab active" onclick="showStep('p1')"
+          <span class="stab active" onclick="showStep(event, 'p1')"
             >Phase 1a: Prepare</span
           >
-          <span class="stab" onclick="showStep('p1b')">Phase 1b: Promise</span>
-          <span class="stab" onclick="showStep('p2')">Phase 2a: Accept</span>
-          <span class="stab" onclick="showStep('p2b')">Phase 2b: Accepted</span>
-          <span class="stab" onclick="showStep('learn')">Learn</span>
+          <span class="stab" onclick="showStep(event, 'p1b')"
+            >Phase 1b: Promise</span
+          >
+          <span class="stab" onclick="showStep(event, 'p2')"
+            >Phase 2a: Accept</span
+          >
+          <span class="stab" onclick="showStep(event, 'p2b')"
+            >Phase 2b: Accepted</span
+          >
+          <span class="stab" onclick="showStep(event, 'learn')">Learn</span>
         </div>
         <div class="step-panel active" id="sp-p1">
           <div class="step-actors">
@@ -1849,17 +1859,21 @@
 
       <div class="stepper">
         <div class="stepper-tabs">
-          <span class="stab active" onclick="showStep2('2p1')"
+          <span class="stab active" onclick="showStep2(event, '2p1')"
             >Phase 1: Prepare</span
           >
-          <span class="stab" onclick="showStep2('2p2')">Phase 2: Commit</span>
-          <span class="stab" onclick="showStep2('2pf')"
+          <span class="stab" onclick="showStep2(event, '2p2')"
+            >Phase 2: Commit</span
+          >
+          <span class="stab" onclick="showStep2(event, '2pf')"
             >Failure: coordinator crash</span
           >
-          <span class="stab" onclick="showStep2('2pp')"
+          <span class="stab" onclick="showStep2(event, '2pp')"
             >Failure: participant crash</span
           >
-          <span class="stab" onclick="showStep2('3pc')">3PC — the fix</span>
+          <span class="stab" onclick="showStep2(event, '3pc')"
+            >3PC — the fix</span
+          >
         </div>
         <div class="step-panel active" id="sp-2p1">
           <div class="step-actors">
@@ -2023,11 +2037,12 @@
 
     <script>
       // NAV scroll
-      function scrollToSection(id) {
+      function scrollToSection(ev, id) {
         document.getElementById(id).scrollIntoView({ behavior: "smooth" });
         document
           .querySelectorAll(".nav-link")
           .forEach((l) => l.classList.remove("active"));
+        ev.currentTarget.classList.add("active");
       }
 
       // CAP interactive
@@ -2045,11 +2060,11 @@
           result: `<strong style="color:var(--accent3)">CA systems</strong> — Consistent AND Available, but <span class="hl">no partition tolerance</span>.<br/>This only works on a single node or a perfectly reliable network. In practice, network partitions always happen — so pure CA distributed systems don't exist.<br/><strong>Examples:</strong> Single-node PostgreSQL, single-node MySQL (not distributed).<br/><strong>Note:</strong> Brewer clarified that "CA" in distributed systems is essentially theoretical.`,
         },
       };
-      function showCap(type) {
+      function showCap(ev, type) {
         document
           .querySelectorAll(".cap-btn")
           .forEach((b) => b.classList.remove("active"));
-        event.target.classList.add("active");
+        ev.currentTarget.classList.add("active");
         document
           .getElementById("cap-highlight")
           .setAttribute("points", capData[type].highlight);
@@ -2057,27 +2072,28 @@
       }
 
       // Paxos stepper
-      function showStep(id) {
+      function showStep(ev, id) {
         document
           .querySelectorAll("#consensus .stab")
           .forEach((t) => t.classList.remove("active"));
         document
           .querySelectorAll("#consensus .step-panel")
           .forEach((p) => p.classList.remove("active"));
-        event.target.classList.add("active");
+        ev.currentTarget.classList.add("active");
         document.getElementById("sp-" + id).classList.add("active");
       }
 
       // 2PC stepper
-      function showStep2(id) {
-        document.querySelectorAll("#twopc .stab, #sp-2p1").forEach(() => {});
-        const tabs = event.target.closest(".stepper").querySelectorAll(".stab");
-        const panels = event.target
+      function showStep2(ev, id) {
+        const tabs = ev.currentTarget
+          .closest(".stepper")
+          .querySelectorAll(".stab");
+        const panels = ev.currentTarget
           .closest(".stepper")
           .querySelectorAll(".step-panel");
         tabs.forEach((t) => t.classList.remove("active"));
         panels.forEach((p) => p.classList.remove("active"));
-        event.target.classList.add("active");
+        ev.currentTarget.classList.add("active");
         document.getElementById("sp-" + id).classList.add("active");
       }
 
